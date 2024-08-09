@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat en temps réel</title>
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <style>
+        body {
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Identifiant de l'utilisateur -->
+    <input type="hidden" id="user_id" value="0"> <!-- Ou "1" si vous utilisez des entiers -->
+
+    <div class="chat-container">
+        <div class="scrollable-content">
+            <div class="affichage">
+                <!-- Les messages de la table "textes" seront affichés ici -->
+            </div>
+        </div>
+        <div class="mt-3 d-flex align-items-center">
+            <label for="texte" class="sr-only">Votre message :</label>
+            <textarea id="texte" maxlength="500" required placeholder="Entrez votre message ici"></textarea>
+            <button class="send-button btn btn-primary">ENVOYER</button>
+        </div>
+    </div>
+
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/js/jquery-3.6.4.min.js"></script>
+    <script src="assets/js/popper.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            function loadMessages() {
+                $.ajax({
+                    url: 'get_texts.php',
+                    type: 'GET',
+                    success: function(response) {
+                        var $affichage = $('.affichage');
+                        $affichage.empty();
+                        $.each(JSON.parse(response), function(index, message) {
+                            var $message = $('<div>').addClass('message');
+                            var $avatar = $('<div>').addClass('avatar').text(message.user_id[0].toUpperCase());
+                            var $text = $('<div>').addClass('text').text(message.texte);
+
+                            if (message.user_id === $('#user_id').val()) {
+                                $message.addClass('sent');
+                            }
+
+                            $message.append($avatar).append($text);
+                            $affichage.append($message);
+                        });
+                        $affichage.scrollTop($affichage[0].scrollHeight);
+                    }
+                });
+            }
+
+            loadMessages();
+            setInterval(loadMessages, 2000);
+
+            $('button.send-button').click(function() {
+                var texte = $('#texte').val();
+                var user_id = $('#user_id').val();
+                if (texte.trim() !== "") {
+                    $.ajax({
+                        url: 'insert.php',
+                        type: 'POST',
+                        data: { texte: texte, user_id: user_id },
+                        success: function(response) {
+                            $('#texte').val('');
+                            loadMessages();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
